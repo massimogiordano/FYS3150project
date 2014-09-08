@@ -62,7 +62,7 @@ int main()
     u_i[n+1] = 0.;        		//to be able to use the generical formula
 
     for(i=n; i>=1; i--){
-        u_i[i] =( double(i)*u_i[i+1] + f_i[i] )/double(i+1);    // 4 flop
+        u_i[i] =( double(i)*u_i[i+1] + f_i[i] )/double(i+1);          // 4 flop
     }
 
     finish = clock();
@@ -92,7 +92,7 @@ int main()
 
 
 
-    name[0] = '1';	          //try to find a way to print the file called
+    name[0] = '1';            //try to find a way to print the file called
     for(i=1; i<t+1;i++){      //as the numbers n used to find the solution
         name[i]='0';
     }
