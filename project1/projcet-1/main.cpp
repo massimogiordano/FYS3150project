@@ -92,8 +92,8 @@ int main()
 
 
 
-    name[0] = '1';	           //try to find a way to print the file called
-    for(i=1; i<t+1;i++){       //as the numbers n used to find the solution
+    name[0] = '1';	          //try to find a way to print the file called
+    for(i=1; i<t+1;i++){      //as the numbers n used to find the solution
         name[i]='0';
     }
 
