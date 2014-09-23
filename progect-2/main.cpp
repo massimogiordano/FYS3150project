@@ -11,87 +11,73 @@ using namespace arma;
 using namespace std;
 
 #define P_MAX  5
-#define TOLLERANCE 10e-10
-#define PI 3.14
+#define TOLLERANCE 10e-8
 #define OMEGA 10e10
-#define STEPS 50
+#define STEPS 100
 
 
 int main()
 {
     int n, i,j;
-    double h, one_h2, p_i, w=OMEGA, ht, tollerance;
+    double h, one_h2, p_i, tollerance, temp=0, lowest;
 
     n=STEPS;
-
-
 
     h = P_MAX / double(n);
     cout << "h: " << h << endl;
     one_h2 = 1/(h*h);
-    //ht = 6.62606957*pow(10.,-34.);
-    n--; //matrix dimension is n-1
+    tollerance = TOLLERANCE;
+
+    n--;    //matrix dimension is n-1
 
     mat M(n,n);
-    mat B(n,n);
+    mat E(n,n);
     M.zeros();
-
+    E.zeros();
     p_i = h;
-    M(0,0) = 2*one_h2 + p_i*p_i;
+
     cout << endl << "Down and up diagonale values: " << one_h2 << endl;
-    cout << endl << "Vpotential P_max: " << P_MAX*P_MAX << endl;
+
+
+    M(0,0) = 2*one_h2 + p_i*p_i;
+    E(0,0) = 1.;
 
     for(i=1; i<n; i++){
 
-        p_i = double(i+1.)*h;  //chiedere circa il +1 e se bisogna partire da zero o da uno
-                                                                                            //cout << p_i << endl;
+        p_i = double(i+1)*h;
 
-        M(i,i) = 2.*one_h2 + p_i*p_i;
+        M(i,i)    = 2.*one_h2 + p_i*p_i;
+        temp += M(i,i);
+        E(i,i)    = 1.;
         M(i-1, i) = -one_h2;
         M(i, i-1) = -one_h2;
 
     }
 
-    B = M;
-
-    //stampo matrice
-    cout << "Diagonal values of matrix: " << endl;
-    for(i=0; i<n; i++){
-        cout << M(i,i) << "  " ;
-    }
-
-//cout << M << endl;
-    tollerance = TOLLERANCE;
-
-    //iterazione qui
+    cout << "Mediam value of diagonal elements: " <<  temp /n << endl;
 
     vec eigen_arma(n);
-    eigen_arma = eig_sym(B);
-
-    cout << eigen_arma << endl;
-    cout << "||||| autovettori da armadillo |||||";
+    eigen_arma = eig_sym(M);
 
     double big_a, teta, c, s, c2,s2,cs, M_kk, M_kl, M_ll,tau, tan;
-    int k, l, count=0, break_loop=0;           //elemento sul quale ruotare.
+    int k, l, count=0, break_loop=0;                //elemento sul quale ruotare.
 
     //START LOOP
 
-    while(count < 1000 && break_loop==0) {		//impostare numero max sicurezza
+    while(count < 1000000 && break_loop==0) {		//impostare numero max sicurezza
         big_a=0;
         count++;
-                                                         // cout << count << endl;
-    for(i=0; i<n; i++){ //cerco il valore più grande
-    for(int j=i+1; j<n; j++){
-                                                         //cout << "in" << i << " "<< j << endl;
-                                                         //cout << M(i,j) << " " << big_a << endl;
-                 if( abs(M(i,j)) > big_a){
-                     big_a = abs(M(i,j));
-                     k=i;
-                     l=j;
-                                                         //cout << big_a << "  k-l    "<< k << j<< endl;
-                 }
 
+    for(i=0; i<n; i++){                            //cerco il valore più grande
+    for(int j=i+1; j<n; j++){
+        if( abs(M(i,j)) > big_a){
+            big_a = abs(M(i,j));
+            k=i;
+            l=j;
+        }
     }}
+
+    cout << big_a << "  k-l    "<< k << " "<< l<< endl;
 
     if(abs(M(k,l))>tollerance){
         //diagonalizzation
@@ -104,51 +90,51 @@ int main()
         }
         c=1./sqrt(1+(tan*tan));
         s=tan/sqrt(1+tan*tan);
+        cs = c*s;
+        c2= c*c;
+        s2 = s*s;
 
-/*
-        if(M(l,l)!=M(k,k)){
-        teta=1;
-        //   teta = 0.5* atan((2*M(k,l))/(M(l,l)-M(k,k)));
-        }else{
-        teta = acos(-1)/4;
-        }					//FINE TROVARE TETA.
-        //calcolo seni e coseni.
-        c = cos(teta); s= sin(teta); cs= c*s; c2= c*c; s2= s*s;
-*/
         M_kk = M(k,k); M_kl = M(k,l); M_ll = M(l,l);               //salvo elelementi della matrice che verrebero riscritti
 
         //sovascrivo matrice
 
         M(k,k) = c2*M_kk - 2*cs*M_kl + s2*M_ll;
         M(l,l) = s2*M_kk + 2*cs*M_kl + c2*M_ll;
-        M(k,l) = M(l,k) = cos(2*teta)*M_kl + 0.5*sin(2*teta)*(M_kk - M_ll);//(c2 - s2)*M_kl + cs*(M_kk - M_ll);
+        M(k,l) = M(l,k) = 0;
 
         for(i=0; i<n ; i++){
             if(i!=k && i!=l){
+                temp= M(k,i);
+
                 M(k,i) = M(i,k) = c*M(k,i) - s*M(l,i);
-                M(l,i) = M(i,l) = s*M(k,i) + c*M(l,i);
+                M(l,i) = M(i,l) = s*temp + c*M(l,i);
             }
+
+            temp = E(i,k);
+            E(i,k) = c*temp - s*E(i,l);
+            E(i,l) = c*E(i,l) + s*temp;
+
         }
 
-                                                        //cout << "inizio" << k << " "<< l << endl;
+        //
+
+
+
 
     }else{
-        cout << endl << "!!!!!Number of iteration:" <<  count    << endl;
+        cout << endl << " Number of iteration:" <<  count    << endl;
         break_loop = 1; //stop while
     }
 
     }
 
-    double less_error, error, lowest=10, temp;
     vec eigen_jac(n);
+                                    //cout << E << endl; //______
+    for(i=0; i<n ; i++){
+       eigen_jac(i) = M(i,i) ;
+    }
 
-    //eigen_jac = diagvec(M,0);
-  //  eigen_jac(n+1) = eigen_jac(0)
- for(i=0; i<n ; i++){
- eigen_jac(i) = M(i,i) ;
- }
 
-cout << eigen_jac << endl << endl;
 //riordino i vettori per essere comparati con gli autovettori
 
     for(i=0; i<n ; i++){
@@ -165,47 +151,19 @@ cout << eigen_jac << endl << endl;
         eigen_jac(i) = lowest;
         eigen_jac(k) = temp;
 
+        for(int e=0; e<n ; e++){
+            temp = E(e,i);
+            E(e,i) = E(e,k);
+            E(e,k) = temp;
+        }
+
+
 
     }
 
+ for(i=0; i<n ; i++) cout << eigen_jac(i) << "rel err: " << abs(eigen_arma(i)-eigen_jac(i))*100/eigen_arma(i) << "%  " <<  i*4 + 3 << "   rel err from teo: " << abs(3+ i*4-eigen_jac(i))*100/(3+i*4) << "%"<< endl;
 
-
-cout << eigen_jac << endl;
-    //riordino gli autovettori
-/*
-    for(i=0; i<n ; i++){
-        less_error = 10000;
-    for(int j=0; j<n ; j++){
-        error = (abs(abs(eigen_arma(j)) - abs(M(i,i)) ) / abs(eigen_arma(j)));
-        if (less_error > error){
-                less_error = error;
-                l=j;
-    }
-    }
-
-
-        eigen_same_order(i) = eigen_arma(l);
-
-    }
-
-
-    //stampo errori relativ
-
-    error = 0;
-    for(int j=0; j<n ; j++){
-        if( (abs(abs(eigen_same_order(j)) - abs(M(j,j)) ) / abs(eigen_same_order(j))) > error)
-            error = (abs(abs(eigen_same_order(j)) - abs(M(j,j)) ) / abs(eigen_same_order(j)));
-    }
-
-    cout << endl << "Maximum relativ error of EIGENVALUE copared with armadillo one is:  " << error << "%." << endl;
-
-    cout << endl << "ARMADILLO VALUES:     JACOBI'S VALUES" << endl;
-
-    for(int j=0; j<n ; j++){
-    cout << endl << eigen_same_order(j) <<  "            " << M(j,j) << endl;
-    }
-
-*/
+ for(i=0; i<n ; i++) cout << i <<  "  "<< E(i,0) << " " << E(i,1) << " " << E(i,2)<< endl;;
 
 
 
