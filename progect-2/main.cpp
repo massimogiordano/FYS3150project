@@ -5,52 +5,107 @@
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
-//#include <unistd.h>
 
 using namespace arma;
 using namespace std;
 
 #define NUMBER_OF_ELECTRON 1   //set 1 or 2
-#define COULOMB_INTERACTION 0  //set 0 for NOT consender coulomb interaction
+#define COULOMB_INTERACTION 1  //set 0 for NOT consender coulomb interaction
 #define TOLLERANCE 10e-8
-#define OMEGA 1/(132.638)
+#define OMEGA 1
 #define STEPS 100
 
-double potential(double x){
- double potential=0;
-         if(NUMBER_OF_ELECTRON == 2){
-                potential = OMEGA*OMEGA*x*x;
-                if (COULOMB_INTERACTION)
-                    potential += 1/x;
-         }
+double potential(double);
+void  print_eigen_vector(mat &, int);
+void biggest_element_of_matrix(mat &M, int *a, int *b);
+double jacobi_algorithm(mat &M, mat &EIGEN_VECTORS);
+void print_file(vec &obtained, vec &compared, double time);
 
-return potential;
-}
+int main()
+{
+    int n;
+    double h, one_h2, p_i, temp=0, p_max=5;
 
-void biggest_element_of_matrix(mat &M, int *a, int *b){
+    n=STEPS;
 
-    double biggest_element=0;
-    int n = M.n_rows;
-    for(int i=0; i<n; i++){
+    if(NUMBER_OF_ELECTRON == 2) p_max=5/sqrt(OMEGA);
 
-    for(int j=i+1; j<n; j++){
-            if( abs(M(i,j)) > biggest_element){
-            biggest_element = abs(M(i,j));
-            *a=i;
-            *b=j;
+    h = p_max/double(n);
+    one_h2 = 1/(h*h);
 
+    cout << "Down and up diagonale values: " << one_h2 << endl;
+
+    n--;                                               //matrix has dimension n - 1
+
+    mat M(n,n);
+    mat EIGENVECTOR(n,n);
+    M.zeros();
+    EIGENVECTOR.zeros();
+
+    p_i = h;                                           //P_i is the distance from 0.
+    M(0,0) = 2*one_h2 + p_i*p_i;
+    EIGENVECTOR(0,0) = 1.;
+
+    for(int i=1; i<n; i++){
+
+        p_i = double(i+1)*h;
+
+        M(i,i)    = 2.*one_h2 + potential(p_i);
+        temp     +=   M(i,i);
+        M(i-1, i) =  -one_h2;
+        M(i, i-1) =  -one_h2;
+        EIGENVECTOR(i,i) =1.;
+    }
+
+    cout << "Mediam value of diagonal elements: " <<  temp/n << endl;
+
+    double time = jacobi_algorithm(M, EIGENVECTOR);
+
+    cout << "Time need to diagolizzate the matrix: "<< time << "s" << endl;
+
+    vec eigenvalue_jacobi(n);
+
+    for(int i=0; i<n ; i++){             //it take the element on the diagonal (eigenvalue) and
+       eigenvalue_jacobi(i) = M(i,i) ;   //it put it in a vector
+    }
+
+    for(int i=0; i<n ; i++){                     //This reorders the vector in ascending order.
+        double temp =  eigenvalue_jacobi(i);
+        double lowest = temp;
+
+        int k=i;
+        for(int j=i+1; j<n; j++){
+            if( eigenvalue_jacobi(j) < lowest ){
+            lowest = eigenvalue_jacobi(j);
+            k = j;
+            }
         }
-    }}
 
+        eigenvalue_jacobi(i) = lowest;
+        eigenvalue_jacobi(k) = temp;
+
+        for(int e=0; e<n ; e++){	       //This reorders the eigen vectors in the same order
+            temp = EIGENVECTOR(e,i);
+            EIGENVECTOR(e,i) = EIGENVECTOR(e,k);
+            EIGENVECTOR(e,k) = temp;
+        }
+    }
+
+    vec eigenvalue_armadillo(n);
+    eigenvalue_armadillo = eig_sym(M);
+
+    print_file(eigenvalue_jacobi, eigenvalue_armadillo, time);
+    print_eigen_vector(EIGENVECTOR, 3);
 }
 
 
-void jacobi_algorithm(mat &M, mat &EIGEN_VECTORS){
+double jacobi_algorithm(mat &M, mat &EIGEN_VECTORS){
 
     int n = M.n_rows;
     int iteration=0, break_loop=0;
     static char bar[] = "                                    "
-                        "                                   ►";
+                       "                                   ►";
+    clock_t start= clock();
 
     cout << endl <<"Digonalizzation of Matrix in progress:"<< endl;
     double first = log(abs(M(0,1))), normalizzation=-log(TOLLERANCE);   //value to normalizze the time need to the algorithm
@@ -99,93 +154,84 @@ void jacobi_algorithm(mat &M, mat &EIGEN_VECTORS){
         }
     }
     printf("\x1b[31m\033[0m" "\nNumber of iteration: %d \n", iteration);
+return double(clock() - start)/CLOCKS_PER_SEC;
 }
 
-int main()
-{
-    int n;
-    double h, one_h2, p_i, temp=0, p_max=5;
+double potential(double x){
+         double potential=0;
+         if(NUMBER_OF_ELECTRON == 2){
+                potential = OMEGA*OMEGA*x*x;
+                if (COULOMB_INTERACTION)
+                    potential += 1/x;
+         }else{
+                potential = x*x;
+        }
+return potential;
+}
 
-    n=STEPS;
+void biggest_element_of_matrix(mat &M, int *a, int *b){
 
-    if(NUMBER_OF_ELECTRON == 2) p_max=5/sqrt(OMEGA);
+    double biggest_element=0;
+    int n = M.n_rows;
+    for(int i=0; i<n; i++){
 
-    h = p_max/double(n);
-    one_h2 = 1/(h*h);
+    for(int j=i+1; j<n; j++){
+            if( abs(M(i,j)) > biggest_element){
+            biggest_element = abs(M(i,j));
+            *a=i;
+            *b=j;
 
-    cout << "Down and up diagonale values: " << one_h2 << endl;
+        }
+    }}
 
-    n--;                                                    //matrix dimension is n-1
+}
 
-    mat M(n,n);
-    mat E(n,n);
-    M.zeros();
-    E.zeros();
+//PRINT A FILE EIGEN VALUES
+void print_file(vec &obtained, vec &compared, double time){
+    int n = obtained.n_elem  ;
+    char *filename = new char[1000];
+    sprintf(filename, "Eigen_value_%d.txt", n+1);
 
-    p_i = h;                                           //P_i is the distance from 0.
-    M(0,0) = 2*one_h2 + p_i*p_i;
-    E(0,0) = 1.;
+        ofstream output (filename);
+          if (output.is_open()){
+            //TITLE
+            output.precision(5);
+            output << "Dimension matrix computed: "<< n << endl << "time for diagonalize: "<< time << "s"<< endl << endl;
+            output <<std::scientific << "EIGEN VALUE" << "    Relative error " ;
+            if(NUMBER_OF_ELECTRON==1)
+                   output <<  "  Theoretical value   " << "   Relative error from teory: ";
+            output << endl;
 
-    for(int i=1; i<n; i++){
-
-        p_i = double(i+1)*h;
-
-        M(i,i)    = 2.*one_h2 + potential(p_i); OMEGA*OMEGA*p_i*p_i + 1/p_i;  //p_i*p_i; //
-        temp += M(i,i);
-        E(i,i)    = 1.;
-        M(i-1, i) = -one_h2;
-        M(i, i-1) = -one_h2;
-
-    }
-
-    cout << "Mediam value of diagonal elements: " <<  temp /n << endl;
-
-    vec eigen_arma(n);
-    eigen_arma = eig_sym(M);
-
-
-    jacobi_algorithm(M, E);
-
-    vec eigen_jac(n);
-
-    for(int i=0; i<n ; i++){
-       eigen_jac(i) = M(i,i) ;
-    }
-
-
-//riordino i vettori per essere comparati con gli autovettori
-
-    for(int i=0; i<n ; i++){
-        double temp =  eigen_jac(i),  lowest = temp;
-
-        int k=i;
-        for(int j=i+1; j<n; j++){
-            if( eigen_jac(j) < lowest ){
-            lowest = eigen_jac(j);
-            k = j;
-
+            for(int i=0; i<n ; i++){
+                output <<std::scientific << obtained(i) << "    " << abs(compared(i)-obtained(i))*100/compared(i) << " %        ";
+                if(NUMBER_OF_ELECTRON==1)
+                       output <<  i*4 + 3 << "                    " << abs(3+ i*4-obtained(i))*100/(3+i*4) << " %";
+                output << endl;
             }
-        }
 
-        eigen_jac(i) = lowest;
-        eigen_jac(k) = temp;
+            output.close();
+          }
+          else cout << "Unable to open file";
+}
+//PRINT A FILE EIGENVECTORS
+void  print_eigen_vector(mat &EIGENVECTOR, int r){
+    int n = EIGENVECTOR.n_rows;
+    char *filename = new char[1000];
+    sprintf(filename, "%d_Eigen_vectors_%d.txt",r, n+1);
 
-        for(int e=0; e<n ; e++){
-            temp = E(e,i);
-            E(e,i) = E(e,k);
-            E(e,k) = temp;
-        }
+        ofstream output (filename);
+          if (output.is_open()){
+            output.precision(5);
+            output << "Dimension matrix computed: "<< n << endl  << endl;
+            output <<std::scientific << "EIGEN VALUE"<< endl;
 
+            for(int i=0; i<n ; i++){
+                for(int y=0; y<r ; y++)
+                output << EIGENVECTOR(i,y) << "     ";
+                output << endl;
+            }
 
-
-    }
-
- for(int i=0; i<n ; i++) cout << eigen_jac(i) << "rel err: " << abs(eigen_arma(i)-eigen_jac(i))*100/eigen_arma(i) << "%  " <<  i*4 + 3 << "   rel err from teo: " << abs(3+ i*4-eigen_jac(i))*100/(3+i*4) << "%"<< endl;
-
- for(int i=0; i<n ; i++) cout << i <<  "  "<< E(i,0)*E(i,0) << " " << E(i,1)*E(i,1) << " " << E(i,2)*E(i,2)<< endl;;
-
-
-
-
-
+            output.close();
+          }
+          else cout << "Unable to open file";
 }
