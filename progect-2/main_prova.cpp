@@ -61,7 +61,20 @@ int main()
 
     double big_a, teta, c, s, c2,s2,cs, M_kk, M_kl, M_ll,tau, tan;
     int k, l, count=0, break_loop=0;                //elemento sul quale ruotare.
+//___ provo il determinante
+double c, a=1, b=0,lamda=3, det;
+for(i=0; i<=n-2;i++){
+    c = a*(M(i,i)-lamda) + b;
+    b = -a;
+    a = c;
+}
+cout << "i=" << i << endl;
+det = a*M(i,i) - one_h2*one_h2(a+M(n,n));
+cout << det << "determinante"<<endl;
 
+
+
+//__
     //START LOOP
 
     while(count < 1000000 && break_loop==0) {		//impostare numero max sicurezza
@@ -84,9 +97,9 @@ int main()
 
         tau = (M(l,l) - M(k,k))/(2*M(k,l));
         if(tau > 0){
-            tan = 1./(tau + sqrt(1.0 + tau*tau));
+           tan = 1./(tau + sqrt(1.0 + tau*tau));//-tau + sqrt(1.0 + tau*tau);
         }else{
-            tan = -1./(-tau + sqrt(1.0 + tau*tau));
+            tan =  -1./(-tau + sqrt(1.0 + tau*tau));//-tau - sqrt(1.0 + tau*tau);//
         }
         c=1./sqrt(1+(tan*tan));
         s=tan/sqrt(1+tan*tan);
@@ -97,16 +110,17 @@ int main()
         M_kk = M(k,k); M_kl = M(k,l); M_ll = M(l,l);               //salvo elelementi della matrice che verrebero riscritti
 
         //sovascrivo matrice
-
+        M(k,l) = M(l,k) = 0;
         M(k,k) = c2*M_kk - 2*cs*M_kl + s2*M_ll;
         M(l,l) = s2*M_kk + 2*cs*M_kl + c2*M_ll;
-        M(k,l) = M(l,k) = 0;
+
 
         for(i=0; i<n ; i++){
             if(i!=k && i!=l){
                 temp= M(k,i);
 
                 M(k,i) = M(i,k) = c*M(k,i) - s*M(l,i);
+                                                                // cout << "TEMP ZERO??" << temp << "  " << M(l,i)<< endl;
                 M(l,i) = M(i,l) = s*temp + c*M(l,i);
             }
 
