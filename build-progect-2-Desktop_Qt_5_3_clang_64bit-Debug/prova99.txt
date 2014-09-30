@@ -1,2 +1,0 @@
-Dimension matrix computed: 10^99x10^99
-

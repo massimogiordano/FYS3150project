@@ -11,20 +11,20 @@ using namespace std;
 
 #define NUMBER_OF_ELECTRON 1   //set 1 or 2
 #define COULOMB_INTERACTION 1  //set 0 for NOT consender coulomb interaction
-#define TOLLERANCE 10e-8
+#define TOLLERANCE 10e-10
 #define OMEGA 1
 #define STEPS 100
 
 double potential(double);
-void  print_eigen_vector(mat &, int);
 void biggest_element_of_matrix(mat &M, int *a, int *b);
 double jacobi_algorithm(mat &M, mat &EIGEN_VECTORS);
 void print_file(vec &obtained, vec &compared, double time);
+void  print_eigen_vector(mat &, int, double);
 
 int main()
 {
     int n;
-    double h, one_h2, p_i, temp=0, p_max=5;
+    double h, one_h2, p_i, temp=0, p_max=10;
 
     n=STEPS;
 
@@ -57,7 +57,7 @@ int main()
         EIGENVECTOR(i,i) =1.;
     }
 
-    cout << "Mediam value of diagonal elements: " <<  temp/n << endl;
+    cout << "Average of the values on the diagonal: " <<  temp/n << endl;
 
     double time = jacobi_algorithm(M, EIGENVECTOR);
 
@@ -95,7 +95,7 @@ int main()
     eigenvalue_armadillo = eig_sym(M);
 
     print_file(eigenvalue_jacobi, eigenvalue_armadillo, time);
-    print_eigen_vector(EIGENVECTOR, 3);
+    print_eigen_vector(EIGENVECTOR, 3, OMEGA*1.);
 }
 
 
@@ -128,9 +128,9 @@ double jacobi_algorithm(mat &M, mat &EIGEN_VECTORS){
         double  tau = (M(l,l) - M(k,k))/(2*M(k,l));        //it found the angol that after rotation make the element A_kl=0
         double  tan;
         if(tau > 0){
-           tan = 1./(tau + sqrt(1.0 + tau*tau));//-tau + sqrt(1.0 + tau*tau);
+           tan = 1./(tau + sqrt(1.0 + tau*tau));
         }else{
-           tan =  -1./(-tau + sqrt(1.0 + tau*tau));//-tau - sqrt(1.0 + tau*tau);//
+           tan =  -1./(-tau + sqrt(1.0 + tau*tau));
         }
         double c= 1./sqrt(1+(tan*tan));
         double s= tan/sqrt(1+tan*tan);
@@ -142,10 +142,11 @@ double jacobi_algorithm(mat &M, mat &EIGEN_VECTORS){
         M(k,k) = c2*M_kk - 2*cs*M_kl + s2*M_ll;				//
         M(l,l) = s2*M_kk + 2*cs*M_kl + c2*M_ll;				//
 
-        for(int i=0; i<n ; i++){
+
+        for(int i=0; i<n ; i++){                            //It performe the same trasfromation on the matrix of basis
             if(i!=k && i!=l){
                 double temp= M(k,i);
-                M(k,i) = M(i,k) = c*M(k,i) - s*M(l,i);      //
+                M(k,i) = M(i,k) = c*M(k,i) - s*M(l,i);
                 M(l,i) = M(i,l) = s*temp + c*M(l,i);
             }
             double temp = EIGEN_VECTORS(i,k);
@@ -214,10 +215,10 @@ void print_file(vec &obtained, vec &compared, double time){
           else cout << "Unable to open file";
 }
 //PRINT A FILE EIGENVECTORS
-void  print_eigen_vector(mat &EIGENVECTOR, int r){
+void  print_eigen_vector(mat &EIGENVECTOR, int r, double omega){
     int n = EIGENVECTOR.n_rows;
     char *filename = new char[1000];
-    sprintf(filename, "%d_Eigen_vectors_%d.txt",r, n+1);
+    sprintf(filename, "%d_Eigen_vectors_%d_%f.txt",r, n+1,omega);
 
         ofstream output (filename);
           if (output.is_open()){
