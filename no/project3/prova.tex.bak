@@ -1,0 +1,78 @@
+\documentclass{minimal}
+\usepackage{tikz}
+\usetikzlibrary{arrows,positioning,shapes} 
+\tikzset{
+    %Define standard arrow tip
+    >=stealth',
+    %Define style for boxes
+    punkt/.style={
+           rectangle,
+           rounded corners,
+           draw=black, very thick,
+           text width=7.5em,
+           minimum height=2em,
+           text centered},
+    % Define arrow style
+    pil/.style={
+           ->,
+           thick,
+           shorten <=2pt,
+           shorten >=2pt,}
+}
+
+\begin{document}
+
+\begin{tikzpicture}[node distance=1cm, auto,]
+ %nodes
+ \node[] (market) {};
+  \node[punkt, inner sep=5pt,below=-0.5cm of market](px) {Position x};
+ \node[punkt, inner sep=5pt,below=0.5cm of market](formidler) {Position y};
+  \node[punkt, inner sep=5pt,below=1.5cm of market](pz) {Position z};
+  \node[punkt, inner sep=5pt,below=2.5cm of market](vx) {Velocity x};
+  \node[punkt, inner sep=5pt,below=3.5cm of market](vy) {Velocity y};
+   \node[punkt, inner sep=5pt,below=4.5cm of market](vz) {Velocity z};
+      \node[punkt, inner sep=5pt,below=5.5cm of market](mas) {Mass $ n$};
+            
+  \node[punkt, inner sep=5pt, right=2cm of px](zx) {$\frac{dp_x}{dt}$ = Velocity x};
+ \node[punkt, inner sep=5pt, right=2cm of formidler](py2) {$\frac{dp_y}{dt}$ = Velocity y};
+  \node[punkt, inner sep=5pt, right=2cm of pz](pz2) {$\frac{dp_z}{dt}$ = Velocity z};
+  \node[punkt, inner sep=5pt, right=2cm of vx](vx2) {$\frac{dv_x}{dt}$ = Acc x};
+  \node[punkt, inner sep=5pt, right=2cm of vy](vy2) {$\frac{dv_y}{dt}$ = Acc y};
+   \node[punkt, inner sep=5pt, right=2cm of vz](vz2) {$\frac{dv_z}{dt}$ = Acc z};
+   \node[punkt, inner sep=5pt,right=2cm of mas](mas2) {Mass $ n$};
+ %    \node[ right=1cm of vx2](a1) {$\sum_{1}^{n} - \frac{G \ M_i}{\sqrt{p_{xyz_1}}^3} p_x$};
+      \node[ right=1cm of vy2](a1) {$\sum_{1}^{n} - \frac{G \ M_i}{\sqrt{p_{xyz_1}}^3} p_y$};
+ %   \node[ right=1cm of vz2](a3) {$\sum_{1}^{n} - \frac{G \ M_i}{\sqrt{p_{xyz_1}}^3} p_z$};
+   
+   
+            
+ % We make a dummy figure to make everything look nice.
+ \node[above=0.5cm of market] (dummy) {$n$ planet};
+\node[right=2.5cm of dummy] (dummy2) {$n$ planet derivates K1};
+\path[blue,->] (a1.west) edge [out= 180, in= 0] (vx2.east);
+\path[blue,->] (a1.west) edge [out= 180, in= 0] (vy2.east);
+\path[blue,->] (a1.west) edge [out= 180, in= 0] (vz2.east);
+\path[blue,->] (vx.east) edge [out= 0, in= 160] (zx.west);
+\path[blue,->] (vy.east) edge [out= 0, in= 160] (py2.west);
+\path[blue,->] (vz.east) edge [out= 0, in= 160] (pz2.west);\\
+\path[blue,->] (mas.east) edge [out= 0, in= 180] (mas2.west);
+ %\node[ above of species1](ll) {}
+         \node (species1) [shape=rectangle,draw, right=2cm of py2] {
+        
+            \begin{tabular}{|c|c|c|c|}
+            \multicolumn{3}{c}{{Matrix of stored data}}\\
+                $P_1$ & $P_2$ &  \colorbox{green}{$P_i$}& $P_n$\\
+                 $V_1$ & $V_2$ & \colorbox{green}{$V_i$}  & $V_n$\\
+                  $M_1$ & $M_2$ & \colorbox{green}{$M_i$}  & $M_n$
+            \end{tabular}
+        };
+       \path[blue,<-] (dummy.north) edge [out= 90, in= 90] (species1);
+       \path[blue,<-] (a1.north) edge [out= 145, in= 180] (species1.south west);
+        \path[blue,<-] (a1.south) edge [out= -90, in= 0] (species1.east);
+
+
+\end{tikzpicture}
+
+\vspace{1em}
+\emph{Structure, storage and migration of data.}
+\end{document}

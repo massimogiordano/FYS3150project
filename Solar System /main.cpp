@@ -119,6 +119,7 @@ double t=0, h=500, tmax=6e7;
 cout << "succede qualcosa??"<< endl;
 
 
+
    while(t<tmax){
 //       cout << "y_i"<< endl;
 
